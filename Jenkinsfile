@@ -10,6 +10,8 @@ pipeline {
         // Image name on Docker Hub, and a version tag built from the Jenkins build number
         IMAGE_NAME = 'aswinvijayan04/transaction-validator'
         IMAGE_TAG  = "1.0.${BUILD_NUMBER}"
+        SONAR_ORG     = 'aswinvijayan04'        // identifier, not a secret
+        SONAR_PROJECT = 'aswinvijayan04_capstone'    // identifier, not a secret
     }
 
     stages {
@@ -43,6 +45,23 @@ pipeline {
             post {
                 success {
                     archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                }
+            }
+        }
+         stage('Security Checks') {
+            steps {
+                // The token comes from the Jenkins credential "sonar-token" and is masked in the log
+                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                    // Analyses the code, uploads results to SonarCloud, and waits for the Quality Gate verdict.
+                    // If the gate fails, this stage fails and nothing after it runs.
+                    sh '''
+                      ./mvnw -B org.sonarsource.scanner.maven:sonar-maven-plugin:5.0.0.4389:sonar \
+                        -Dsonar.host.url=https://sonarcloud.io \
+                        -Dsonar.organization=$SONAR_ORG \
+                        -Dsonar.projectKey=$SONAR_PROJECT \
+                        -Dsonar.token=$SONAR_TOKEN \
+                        -Dsonar.qualitygate.wait=true
+                    '''
                 }
             }
         }
