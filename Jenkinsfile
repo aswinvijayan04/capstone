@@ -1,31 +1,31 @@
-// Declarative pipeline: a fixed structure of stages that Jenkins runs top to bottom.
-// If any stage fails, the pipeline stops and later stages do not run.
 pipeline {
-    agent any    // run on any available Jenkins machine (here, the Jenkins container itself)
+    agent any
+
+    environment {
+        // Image name on Docker Hub, and a version tag built from the Jenkins build number
+        IMAGE_NAME = 'aswinvijayan04/transaction-validator'
+        IMAGE_TAG  = "1.0.${BUILD_NUMBER}"
+    }
 
     stages {
         stage('Checkout') {
             steps {
-                // Pull the code from the Git repo this job is connected to
                 checkout scm
             }
         }
 
         stage('Build') {
             steps {
-                // ./mvnw = Maven Wrapper (downloads the right Maven itself); -B = batch mode, cleaner logs
                 sh './mvnw -B clean compile'
             }
         }
 
         stage('Test') {
             steps {
-                // Runs the JUnit tests. A failing test returns a non-zero exit code, which fails this stage.
                 sh './mvnw -B test'
             }
             post {
                 always {
-                    // Publish test results in Jenkins, even when tests fail
                     junit 'target/surefire-reports/*.xml'
                 }
             }
@@ -33,13 +33,33 @@ pipeline {
 
         stage('Package') {
             steps {
-                // Build the jar. Tests already ran in the previous stage, so skip them here.
                 sh './mvnw -B package -DskipTests'
             }
             post {
                 success {
-                    // Keep the jar on the Jenkins build page
                     archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                }
+            }
+        }
+
+        stage('Container Build') {
+            steps {
+                // Uses your laptop's Docker engine through the mounted socket
+                sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
+            }
+        }
+
+        stage('Push') {
+            steps {
+                // Jenkins injects the credential as two temporary variables and masks them in the log
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds',
+                                                  usernameVariable: 'DH_USER',
+                                                  passwordVariable: 'DH_PASS')]) {
+                    // Single quotes: the shell reads the variables, so the secret never passes through Groovy.
+                    // --password-stdin keeps the token out of the process list.
+                    sh 'echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin'
+                    sh 'docker push $IMAGE_NAME:$IMAGE_TAG'
+                    sh 'docker logout'
                 }
             }
         }
