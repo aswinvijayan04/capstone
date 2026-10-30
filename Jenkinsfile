@@ -53,6 +53,32 @@ pipeline {
                 sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
             }
         }
+                stage('Security Scan') {
+            steps {
+                // 1) Save a readable report (never fails the build), so we always have scan evidence
+                sh '''
+                  docker run --rm \
+                    -v /var/run/docker.sock:/var/run/docker.sock \
+                    -v trivy-cache:/root/.cache/ \
+                    aquasec/trivy:latest image \
+                    --scanners vuln --severity HIGH,CRITICAL \
+                    $IMAGE_NAME:$IMAGE_TAG > trivy-report.txt || true
+                '''
+                archiveArtifacts artifacts: 'trivy-report.txt', allowEmptyArchive: true
+
+                // 2) The GATE: --exit-code 1 makes Trivy return an error on any HIGH or CRITICAL finding,
+                //    which fails this stage, so the Push stage never runs
+                sh '''
+                  docker run --rm \
+                    -v /var/run/docker.sock:/var/run/docker.sock \
+                    -v trivy-cache:/root/.cache/ \
+                    aquasec/trivy:latest image \
+                    --scanners vuln --severity HIGH,CRITICAL \
+                    --exit-code 1 \
+                    $IMAGE_NAME:$IMAGE_TAG
+                '''
+            }
+        }
 
         stage('Push') {
             steps {
