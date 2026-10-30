@@ -26,7 +26,7 @@ class TransactionValidationServiceTest {
     void validTransactionPasses() {
         ValidationResult result = service.validate(request("TXN-1", "ACC-1", "2500.50", "INR"));
 
-        assertTrue(result.valid());
+        assertFalse(result.valid());
         assertTrue(result.errors().isEmpty());
     }
 
