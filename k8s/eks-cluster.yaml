@@ -1,0 +1,22 @@
+# eksctl reads this file and builds the whole cluster (network, control plane, worker machines)
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: finsecure-cluster        # cluster name
+  region: ap-south-1             # Mumbai
+  tags:
+    project: capstone            # lets the account owner see what belongs to this project
+
+# Skip the NAT gateway: it costs money every hour and our nodes do not need it
+vpc:
+  nat:
+    gateway: Disable
+
+managedNodeGroups:
+  - name: workers
+    instanceType: t3.medium      # 2 vCPU, 4 GB RAM: enough for two Spring Boot pods plus monitoring
+    desiredCapacity: 2           # two worker machines
+    minSize: 2
+    maxSize: 2
+    volumeSize: 20               # disk size in GB per machine

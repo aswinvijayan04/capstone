@@ -1,0 +1,12 @@
+# A Service gives the pods one stable address and load-balances across them.
+apiVersion: v1
+kind: Service
+metadata:
+  name: transaction-validator
+spec:
+  type: LoadBalancer                # on EKS this creates an AWS load balancer with a public address
+  selector:
+    app: transaction-validator      # send traffic to pods with this label
+  ports:
+    - port: 80                      # the port outside users call
+      targetPort: 8080              # the port the container listens on

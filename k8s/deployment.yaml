@@ -1,0 +1,49 @@
+# A Deployment keeps the desired number of identical pods running and handles rolling updates.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transaction-validator
+  labels:
+    app: transaction-validator
+spec:
+  replicas: 2                       # requirement: at least two pods
+  selector:
+    matchLabels:
+      app: transaction-validator    # which pods this Deployment manages
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0             # never drop below 2 ready pods during an update
+      maxSurge: 1                   # allow 1 extra pod while updating
+  template:
+    metadata:
+      labels:
+        app: transaction-validator
+    spec:
+      containers:
+        - name: transaction-validator
+          image: aswinvijayan04/transaction-validator:1.0.0   # fixed version tag, not "latest"
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: transaction-validator-config   # injects the ConfigMap values as env vars
+          resources:
+            requests:               # what the scheduler reserves for the pod
+              cpu: "100m"
+              memory: "256Mi"
+            limits:                 # hard ceiling
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:           # "is this pod ready to receive traffic?" If not, it is removed from the Service
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          livenessProbe:            # "is this pod still alive?" If not, Kubernetes restarts the container
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 40
+            periodSeconds: 10

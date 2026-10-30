@@ -1,0 +1,10 @@
+# A ConfigMap stores settings outside the image, so you can change them without rebuilding.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: transaction-validator-config
+data:
+  # Spring Boot reads these environment variables and applies them as settings
+  SERVER_PORT: "8080"
+  LOGGING_LEVEL_ROOT: "INFO"
+  LOGGING_LEVEL_COM_FINSECURE: "INFO"
