@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+     triggers {
+        // Every ~2 minutes, check Git for new commits; "H" spreads the check time to avoid load spikes
+        pollSCM('H/2 * * * *')
+    }
+
     environment {
         // Image name on Docker Hub, and a version tag built from the Jenkins build number
         IMAGE_NAME = 'aswinvijayan04/transaction-validator'
