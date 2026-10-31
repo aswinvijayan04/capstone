@@ -113,5 +113,35 @@ pipeline {
                 }
             }
         }
+                stage('Deploy') {
+            steps {
+                // Jenkins injects the AWS key as two temporary variables, masked in the log
+                withCredentials([usernamePassword(credentialsId: 'aws-creds',
+                                                  usernameVariable: 'AWS_ACCESS_KEY_ID',
+                                                  passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                    sh '''
+                      export AWS_DEFAULT_REGION=ap-south-1
+                      export KUBECONFIG=$WORKSPACE/kubeconfig
+
+                      # Fetch the connection details for whichever cluster exists right now
+                      aws eks update-kubeconfig --name finsecure-cluster --region ap-south-1
+
+                      # Make sure the ConfigMap and Service exist
+                      kubectl apply -f k8s/configmap.yaml -f k8s/service.yaml
+
+                      # Point the Deployment at the image this build just pushed: this starts the rolling update
+                      kubectl set image deployment/transaction-validator transaction-validator=$IMAGE_NAME:$IMAGE_TAG
+
+                      # Record what changed, so "rollout history" is readable
+                      kubectl annotate deployment/transaction-validator \
+                        kubernetes.io/change-cause="Jenkins build $BUILD_NUMBER: $IMAGE_TAG" --overwrite
+
+                      # Wait for the rollout; if it does not finish in 3 minutes, this fails the stage
+                      kubectl rollout status deployment/transaction-validator --timeout=180s
+                      kubectl get pods -o wide
+                    '''
+                }
+            }
+        }
     }
 }
