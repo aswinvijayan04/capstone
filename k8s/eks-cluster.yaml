@@ -15,7 +15,7 @@ vpc:
 
 managedNodeGroups:
   - name: workers
-    instanceType: t3.medium      # 2 vCPU, 4 GB RAM: enough for two Spring Boot pods plus monitoring
+    instanceType: m7i-flex.large   # 2 vCPU, 8 GB; allowed on this account (t3.medium is not)
     desiredCapacity: 2           # two worker machines
     minSize: 2
     maxSize: 2
