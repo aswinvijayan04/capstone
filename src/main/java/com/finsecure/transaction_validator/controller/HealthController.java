@@ -15,6 +15,6 @@ public class HealthController {
     public Map<String, String> health() {
         // Spring converts this Map to JSON automatically:
         // {"status":"UP","service":"transaction-validator"}
-            return Map.of("status", "UP", "service", "transaction-validator", "version", "v2");
+        return Map.of("status", "UP", "service", "transaction-validator");
     }
 }
