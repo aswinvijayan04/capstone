@@ -1,0 +1,15 @@
+# A ServiceMonitor is "scrape rules" for the Prometheus Operator: find this Service, read its metrics every 15 seconds
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: transaction-validator
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: transaction-validator
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 15s

@@ -1,0 +1,20 @@
+# Lean settings for a small demo cluster
+alertmanager:
+  enabled: false              # Grafana will send our alerts instead
+
+prometheus:
+  prometheusSpec:
+    retention: 6h             # keep only 6 hours of data: enough for the demo
+    # Let Prometheus pick up our own scrape rules (added later), not only the chart's
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    resources:
+      requests:
+        cpu: 200m
+        memory: 400Mi
+
+grafana:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 200Mi
