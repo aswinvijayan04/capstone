@@ -144,4 +144,20 @@ pipeline {
             }
         }
     }
+        post {
+        success {
+            emailext(
+                subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "Build ${env.BUILD_NUMBER} passed and was deployed as ${env.IMAGE_TAG}.\nDetails: ${env.BUILD_URL}",
+                to: '$DEFAULT_RECIPIENTS'
+            )
+        }
+        failure {
+            emailext(
+                subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "Build ${env.BUILD_NUMBER} failed. Check the console output: ${env.BUILD_URL}console",
+                to: '$DEFAULT_RECIPIENTS'
+            )
+        }
+    }
 }
