@@ -18,3 +18,10 @@ grafana:
     requests:
       cpu: 100m
       memory: 200Mi
+  # Non-secret mail settings
+  env:
+    GF_SMTP_ENABLED: "true"
+    GF_SMTP_HOST: "smtp.gmail.com:587"
+    GF_SMTP_STARTTLS_POLICY: "MandatoryStartTLS"
+  # Secret mail settings (user, from-address, password) come from the Secret we just created
+  envFromSecret: grafana-smtp
